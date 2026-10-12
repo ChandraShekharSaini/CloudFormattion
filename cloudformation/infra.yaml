@@ -1,7 +1,7 @@
 
 AWSTemplateFormatVersion: '2010-09-09'
 
-Description: Create a VPC with two public subnets
+Description: Create an EC2 instance with Apache web server
 
 Parameters:
   Environment:
@@ -12,99 +12,69 @@ Parameters:
       - test
       - prod
 
+  InstanceType:
+    Type: String
+    Default: t3.micro
+
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+  MyIP:
+    Type: String
+    Description: Your public IP address in CIDR notation, e.g. 203.0.113.10/32
+    AllowedPattern: '(\d{1,3}\.){3}\d{1,3}/32'
+    ConstraintDescription: Enter an IPv4 address ending in /32.
+
 Resources:
-  MyVPC:
-    Type: AWS::EC2::VPC
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
     Properties:
-      CidrBlock: 10.0.0.0/16
-      EnableDnsSupport: true
-      EnableDnsHostnames: true
+      GroupDescription: Allow HTTP and SSH from the specified IP
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref MyIP
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-vpc'
-        - Key: Environment
-          Value: !Ref Environment
+          Value: !Sub '${Environment}-ec2-sg'
 
-  InternetGateway:
-    Type: AWS::EC2::InternetGateway
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
     Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      SecurityGroupIds:
+        - !GetAtt EC2SecurityGroup.GroupId
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          dnf update -y
+          dnf install -y httpd
+          systemctl enable --now httpd
+          echo "<h1>Hello from ${Environment} EC2</h1>" > /var/www/html/index.html
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-igw'
-
-  AttachGateway:
-    Type: AWS::EC2::VPCGatewayAttachment
-    Properties:
-      VpcId: !Ref MyVPC
-      InternetGatewayId: !Ref InternetGateway
-
-  PublicSubnet1:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref MyVPC
-      CidrBlock: 10.0.1.0/24
-      AvailabilityZone: !Select
-        - 0
-        - !GetAZs ''
-      MapPublicIpOnLaunch: true
-      Tags:
-        - Key: Name
-          Value: !Sub '${Environment}-public-subnet-1'
-
-  PublicSubnet2:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref MyVPC
-      CidrBlock: 10.0.2.0/24
-      AvailabilityZone: !Select
-        - 1
-        - !GetAZs ''
-      MapPublicIpOnLaunch: true
-      Tags:
-        - Key: Name
-          Value: !Sub '${Environment}-public-subnet-2'
-
-  PublicRouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref MyVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${Environment}-public-rt'
-
-  DefaultPublicRoute:
-    Type: AWS::EC2::Route
-    DependsOn: AttachGateway
-    Properties:
-      RouteTableId: !Ref PublicRouteTable
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
-
-  PublicSubnet1RouteAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      SubnetId: !Ref PublicSubnet1
-      RouteTableId: !Ref PublicRouteTable
-
-  PublicSubnet2RouteAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      SubnetId: !Ref PublicSubnet2
-      RouteTableId: !Ref PublicRouteTable
+          Value: !Sub '${Environment}-web-server'
 
 Outputs:
-  VpcId:
-    Description: VPC ID
-    Value: !Ref MyVPC
+  InstanceId:
+    Description: EC2 instance ID
+    Value: !Ref MyEC2Instance
 
-  PublicSubnet1Id:
-    Description: First public subnet ID
-    Value: !Ref PublicSubnet1
+  PublicIP:
+    Description: EC2 public IP address
+    Value: !GetAtt MyEC2Instance.PublicIp
 
-  PublicSubnet2Id:
-    Description: Second public subnet ID
-    Value: !Ref PublicSubnet2
+  WebsiteURL:
+    Description: Apache web server URL
+    Value: !Sub 'http://${MyEC2Instance.PublicDnsName}'
 
-  InternetGatewayId:
-    Description: Internet Gateway ID
-    Value: !Ref InternetGateway
+  SecurityGroupId:
+    Description: Security group ID
+    Value: !GetAtt EC2SecurityGroup.GroupId

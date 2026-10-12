@@ -1,12 +1,12 @@
 
-name: Deploy AWS VPC with CloudFormation
+name: Deploy EC2 using CloudFormation
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'cloudformation/**'
+      - 'cloudformation/infra.yaml'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   deploy:
-    name: Validate and Deploy VPC
+    name: Deploy EC2
     runs-on: ubuntu-latest
 
     steps:
@@ -29,20 +29,28 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Check AWS identity
+      - name: Verify AWS identity
         run: aws sts get-caller-identity
 
       - name: Validate CloudFormation template
         run: |
           aws cloudformation validate-template \
-            --template-body file://cloudformation/vpc.yaml
+            --template-body file://cloudformation/infra.yaml
 
-      - name: Check CloudFormation changes
+      - name: Deploy EC2 stack
         run: |
           aws cloudformation deploy \
-            --template-file cloudformation/vpc.yaml \
-            --stack-name cloudformattion-vpc-github-actions \
+            --template-file cloudformation/infra.yaml \
+            --stack-name nnnnnnnnnnnnn \
             --parameter-overrides \
               Environment=dev \
               InstanceType=t3.micro \
+              MyIP="${{ secrets.MY_IP }}" \
             --no-fail-on-empty-changeset
+
+      - name: Get stack outputs
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name cloudformattion-ec2-stack \
+            --query "Stacks[0].Outputs" \
+            --output table
