@@ -1,4 +1,4 @@
-template-file-path: cloudformation/infra.yml
+template-file-path: cloudformation/infra.yaml
 
 parameters:
   Environment: dev
