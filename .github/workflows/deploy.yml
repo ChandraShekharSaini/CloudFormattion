@@ -51,6 +51,6 @@ jobs:
       - name: Get stack outputs
         run: |
           aws cloudformation describe-stacks \
-            --stack-name cloudformattion-ec2-stack \
+            --stack-name nnnnnnnnnnnnn  \
             --query "Stacks[0].Outputs" \
             --output table
