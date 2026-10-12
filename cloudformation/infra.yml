@@ -1,0 +1,40 @@
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Create an S3 bucket using AWS CloudFormation
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - test
+      - prod
+
+Resources:
+  ApplicationBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${AWS::AccountId}-${AWS::Region}-my-app-${Environment}-${AWS::StackName}'
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: ManagedBy
+          Value: CloudFormation
+
+Outputs:
+  BucketName:
+    Description: Name of the created S3 bucket
+    Value: !Ref ApplicationBucket
+
+  BucketArn:
+    Description: ARN of the created S3 bucket
+    Value: !GetAtt ApplicationBucket.Arn
