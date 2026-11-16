@@ -2,10 +2,24 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Description: >
-  VPC with 2 Public Subnets, 2 Private Subnets,
-  2 Public EC2, 2 Private EC2, IGW and NAT Gateway.
+  Complete AWS VPC Infrastructure with 2 Public Subnets,
+  2 Private Subnets, 2 Public EC2, 2 Private EC2,
+  Internet Gateway, NAT Gateway and Route Tables.
+
+# =====================================================
+# PARAMETERS
+# =====================================================
 
 Parameters:
+
+  Environment:
+    Description: Deployment environment
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - test
+      - prod
 
   KeyName:
     Description: Existing EC2 Key Pair
@@ -15,19 +29,30 @@ Parameters:
     Description: EC2 Instance Type
     Type: String
     Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t3.micro
+      - t3.small
 
   AMI:
     Description: Amazon Linux 2023 AMI ID for your region
     Type: AWS::EC2::Image::Id
 
   SSHLocation:
-    Description: Your public IP in CIDR format (example 1.2.3.4/32)
+    Description: Your public IP in CIDR format
     Type: String
     Default: 0.0.0.0/0
 
+# =====================================================
+# RESOURCES
+# =====================================================
+
 Resources:
 
-  # ---------------- VPC ----------------
+  # ===================================================
+  # VPC
+  # ===================================================
 
   MyVPC:
     Type: AWS::EC2::VPC
@@ -37,16 +62,30 @@ Resources:
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: My-VPC
+          Value: !Sub '${Environment}-VPC'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
 
-  # ---------------- INTERNET GATEWAY ----------------
+  # ===================================================
+  # INTERNET GATEWAY
+  # ===================================================
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: My-IGW
+          Value: !Sub '${Environment}-IGW'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
 
   AttachIGW:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -54,55 +93,101 @@ Resources:
       VpcId: !Ref MyVPC
       InternetGatewayId: !Ref InternetGateway
 
-  # ---------------- PUBLIC SUBNETS ----------------
+  # ===================================================
+  # PUBLIC SUBNET 1
+  # ===================================================
 
   PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref MyVPC
       CidrBlock: 10.0.1.0/24
-      AvailabilityZone: us-east-1a
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: Public-Subnet-1
+          Value: !Sub '${Environment}-Public-Subnet-1'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ===================================================
+  # PUBLIC SUBNET 2
+  # ===================================================
 
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref MyVPC
       CidrBlock: 10.0.2.0/24
-      AvailabilityZone: us-east-1b
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs ''
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: Public-Subnet-2
+          Value: !Sub '${Environment}-Public-Subnet-2'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
 
-  # ---------------- PRIVATE SUBNETS ----------------
+  # ===================================================
+  # PRIVATE SUBNET 1
+  # ===================================================
 
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref MyVPC
       CidrBlock: 10.0.3.0/24
-      AvailabilityZone: us-east-1a
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: Private-Subnet-1
+          Value: !Sub '${Environment}-Private-Subnet-1'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ===================================================
+  # PRIVATE SUBNET 2
+  # ===================================================
 
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref MyVPC
       CidrBlock: 10.0.4.0/24
-      AvailabilityZone: us-east-1b
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs ''
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: Private-Subnet-2
+          Value: !Sub '${Environment}-Private-Subnet-2'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
 
-  # ---------------- PUBLIC ROUTE TABLE ----------------
+  # ===================================================
+  # PUBLIC ROUTE TABLE
+  # ===================================================
 
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
@@ -110,7 +195,13 @@ Resources:
       VpcId: !Ref MyVPC
       Tags:
         - Key: Name
-          Value: Public-RT
+          Value: !Sub '${Environment}-Public-RT'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
 
   PublicRoute:
     Type: AWS::EC2::Route
@@ -132,7 +223,9 @@ Resources:
       SubnetId: !Ref PublicSubnet2
       RouteTableId: !Ref PublicRouteTable
 
-  # ---------------- ELASTIC IP ----------------
+  # ===================================================
+  # ELASTIC IP
+  # ===================================================
 
   NatEIP:
     Type: AWS::EC2::EIP
@@ -141,9 +234,17 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: NAT-EIP
+          Value: !Sub '${Environment}-NAT-EIP'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
 
-  # ---------------- NAT GATEWAY ----------------
+  # ===================================================
+  # NAT GATEWAY
+  # ===================================================
 
   NatGateway:
     Type: AWS::EC2::NatGateway
@@ -151,11 +252,20 @@ Resources:
     Properties:
       AllocationId: !GetAtt NatEIP.AllocationId
       SubnetId: !Ref PublicSubnet1
+      ConnectivityType: public
       Tags:
         - Key: Name
-          Value: My-NAT-Gateway
+          Value: !Sub '${Environment}-NAT-Gateway'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
 
-  # ---------------- PRIVATE ROUTE TABLE ----------------
+  # ===================================================
+  # PRIVATE ROUTE TABLE
+  # ===================================================
 
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
@@ -163,7 +273,13 @@ Resources:
       VpcId: !Ref MyVPC
       Tags:
         - Key: Name
-          Value: Private-RT
+          Value: !Sub '${Environment}-Private-RT'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
 
   PrivateRoute:
     Type: AWS::EC2::Route
@@ -184,7 +300,9 @@ Resources:
       SubnetId: !Ref PrivateSubnet2
       RouteTableId: !Ref PrivateRouteTable
 
-  # ---------------- PUBLIC SECURITY GROUP ----------------
+  # ===================================================
+  # PUBLIC SECURITY GROUP
+  # ===================================================
 
   PublicSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -196,31 +314,50 @@ Resources:
           FromPort: 22
           ToPort: 22
           CidrIp: !Ref SSHLocation
+
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
+
       Tags:
         - Key: Name
-          Value: Public-SG
+          Value: !Sub '${Environment}-Public-SG'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
 
-  # ---------------- PRIVATE SECURITY GROUP ----------------
+  # ===================================================
+  # PRIVATE SECURITY GROUP
+  # ===================================================
 
   PrivateSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow SSH from public EC2 only
+      GroupDescription: Allow SSH from public EC2 instances
       VpcId: !Ref MyVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
           SourceSecurityGroupId: !Ref PublicSecurityGroup
+
       Tags:
         - Key: Name
-          Value: Private-SG
+          Value: !Sub '${Environment}-Private-SG'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
 
-  # ---------------- PUBLIC EC2 1 ----------------
+  # ===================================================
+  # PUBLIC EC2 INSTANCE 1
+  # ===================================================
 
   PublicEC2_1:
     Type: AWS::EC2::Instance
@@ -236,9 +373,17 @@ Resources:
             - !Ref PublicSecurityGroup
       Tags:
         - Key: Name
-          Value: Public-EC2-1
+          Value: !Sub '${Environment}-Public-EC2-1'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
 
-  # ---------------- PUBLIC EC2 2 ----------------
+  # ===================================================
+  # PUBLIC EC2 INSTANCE 2
+  # ===================================================
 
   PublicEC2_2:
     Type: AWS::EC2::Instance
@@ -254,9 +399,17 @@ Resources:
             - !Ref PublicSecurityGroup
       Tags:
         - Key: Name
-          Value: Public-EC2-2
+          Value: !Sub '${Environment}-Public-EC2-2'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
 
-  # ---------------- PRIVATE EC2 1 ----------------
+  # ===================================================
+  # PRIVATE EC2 INSTANCE 1
+  # ===================================================
 
   PrivateEC2_1:
     Type: AWS::EC2::Instance
@@ -272,9 +425,17 @@ Resources:
             - !Ref PrivateSecurityGroup
       Tags:
         - Key: Name
-          Value: Private-EC2-1
+          Value: !Sub '${Environment}-Private-EC2-1'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
 
-  # ---------------- PRIVATE EC2 2 ----------------
+  # ===================================================
+  # PRIVATE EC2 INSTANCE 2
+  # ===================================================
 
   PrivateEC2_2:
     Type: AWS::EC2::Instance
@@ -290,13 +451,27 @@ Resources:
             - !Ref PrivateSecurityGroup
       Tags:
         - Key: Name
-          Value: Private-EC2-2
+          Value: !Sub '${Environment}-Private-EC2-2'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: CloudFormattion
+        - Key: ManagedBy
+          Value: CloudFormation
+
+# =====================================================
+# OUTPUTS
+# =====================================================
 
 Outputs:
 
   VPCID:
-    Description: VPC ID
+    Description: Created VPC ID
     Value: !Ref MyVPC
+
+  InternetGatewayID:
+    Description: Internet Gateway ID
+    Value: !Ref InternetGateway
 
   PublicSubnet1ID:
     Value: !Ref PublicSubnet1
@@ -310,17 +485,37 @@ Outputs:
   PrivateSubnet2ID:
     Value: !Ref PrivateSubnet2
 
-  NATGatewayID:
+  PublicRouteTableID:
+    Value: !Ref PublicRouteTable
+
+  PrivateRouteTableID:
+    Value: !Ref PrivateRouteTable
+
+  NatGatewayID:
     Value: !Ref NatGateway
 
+  PublicSecurityGroupID:
+    Value: !Ref PublicSecurityGroup
+
+  PrivateSecurityGroupID:
+    Value: !Ref PrivateSecurityGroup
+
   PublicEC2_1_IP:
+    Description: Public EC2 1 Public IP
     Value: !GetAtt PublicEC2_1.PublicIp
 
   PublicEC2_2_IP:
+    Description: Public EC2 2 Public IP
     Value: !GetAtt PublicEC2_2.PublicIp
 
   PrivateEC2_1_IP:
+    Description: Private EC2 1 Private IP
     Value: !GetAtt PrivateEC2_1.PrivateIp
 
   PrivateEC2_2_IP:
+    Description: Private EC2 2 Private IP
     Value: !GetAtt PrivateEC2_2.PrivateIp
+
+  NATPublicIP:
+    Description: NAT Gateway Elastic IP
+    Value: !Ref NatEIP
