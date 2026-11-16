@@ -359,7 +359,7 @@ Resources:
   # PUBLIC EC2 INSTANCE 1
   # ===================================================
 
-  PublicEC2_1:
+  PublicEC21:
     Type: AWS::EC2::Instance
     Properties:
       ImageId: !Ref AMI
@@ -385,7 +385,7 @@ Resources:
   # PUBLIC EC2 INSTANCE 2
   # ===================================================
 
-  PublicEC2_2:
+  PublicEC22:
     Type: AWS::EC2::Instance
     Properties:
       ImageId: !Ref AMI
@@ -411,7 +411,7 @@ Resources:
   # PRIVATE EC2 INSTANCE 1
   # ===================================================
 
-  PrivateEC2_1:
+  PrivateEC21:
     Type: AWS::EC2::Instance
     Properties:
       ImageId: !Ref AMI
@@ -437,7 +437,7 @@ Resources:
   # PRIVATE EC2 INSTANCE 2
   # ===================================================
 
-  PrivateEC2_2:
+  PrivateEC22:
     Type: AWS::EC2::Instance
     Properties:
       ImageId: !Ref AMI
