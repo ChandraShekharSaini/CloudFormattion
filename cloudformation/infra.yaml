@@ -2,7 +2,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Description: >
-  Complete AWS VPC Infrastructure with 2 Public Subnets,
+  Complete AWS VPC Infrastructure with 2 Public Subnetss,
   2 Private Subnets, 2 Public EC2, 2 Private EC2,
   Internet Gateway, NAT Gateway and Route Tables.
 
