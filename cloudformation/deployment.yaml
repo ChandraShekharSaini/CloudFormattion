@@ -1,7 +1,12 @@
+
 template-file-path: cloudformation/infra.yaml
 
 parameters:
   Environment: dev
+  KeyName: my-key
+  InstanceType: t2.micro
+  AMI: ami-xxxxxxxxxxxxxxxxx
+  SSHLocation: YOUR_PUBLIC_IP/32
 
 tags:
   Project: CloudFormattion
