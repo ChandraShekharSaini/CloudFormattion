@@ -66,7 +66,7 @@ jobs:
           aws cloudformation wait stack-create-complete \
             --stack-name aws-clod || \
           aws cloudformation wait stack-update-complete \
-            --stack-name aws-cloudformation-vpc
+            --stack-name aws-clod
 
       # Get stack outputs
       - name: Get stack outputs
