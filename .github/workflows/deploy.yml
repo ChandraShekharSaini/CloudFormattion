@@ -45,6 +45,7 @@ jobs:
 
       # Deploy infrastructure
       - name: Deploy VPC Infrastructure
+        id: deploy
         run: |
           aws cloudformation deploy \
             --template-file cloudformation/infra.yaml \
@@ -60,16 +61,21 @@ jobs:
               ManagedBy=CloudFormation \
             --no-fail-on-empty-changeset
 
-      # Wait for stack completion
-      - name: Wait for CloudFormation deployment
+      # Debug CloudFormation failure
+      - name: CloudFormation failure details
+        if: failure()
         run: |
-          aws cloudformation wait stack-create-complete \
-            --stack-name aws-clod || \
-          aws cloudformation wait stack-update-complete \
-            --stack-name aws-clod
+          echo "========== CLOUDFORMATION STACK EVENTS =========="
+
+          aws cloudformation describe-stack-events \
+            --stack-name aws-clod \
+            --region "${{ secrets.AWS_REGION }}" \
+            --query "StackEvents[?contains(ResourceStatus, 'FAILED')].[Timestamp,LogicalResourceId,ResourceType,ResourceStatus,ResourceStatusReason]" \
+            --output table || true
 
       # Get stack outputs
       - name: Get stack outputs
+        if: success()
         run: |
           aws cloudformation describe-stacks \
             --stack-name aws-clod \
