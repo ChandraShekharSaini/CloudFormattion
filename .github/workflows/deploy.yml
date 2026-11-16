@@ -1,5 +1,5 @@
 
-name: Deploy EC2 using CloudFormation
+name: Deploy AWS Infrastructure using CloudFormation
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
     paths:
       - 'cloudformation/infra.yaml'
       - '.github/workflows/deploy.yml'
+
   workflow_dispatch:
 
 permissions:
@@ -15,13 +16,16 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy EC2
+    name: Deploy VPC Infrastructure
     runs-on: ubuntu-latest
 
     steps:
+
+      # Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -29,28 +33,45 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # Verify AWS identity
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
+      # Validate CloudFormation
       - name: Validate CloudFormation template
         run: |
           aws cloudformation validate-template \
             --template-body file://cloudformation/infra.yaml
 
-      - name: Deploy EC2 stack
+      # Deploy infrastructure
+      - name: Deploy VPC Infrastructure
         run: |
           aws cloudformation deploy \
             --template-file cloudformation/infra.yaml \
-            --stack-name nnnnnnnnnnnnn \
+            --stack-name aws-clod \
             --parameter-overrides \
               Environment=dev \
+              KeyName="${{ secrets.EC2_KEY_NAME }}" \
               InstanceType=t3.micro \
-              MyIP="${{ secrets.MY_IP }}" \
+              AMI="${{ secrets.AMI_ID }}" \
+              SSHLocation="${{ secrets.MY_IP }}" \
+            --tags \
+              Project=CloudFormattion \
+              ManagedBy=CloudFormation \
             --no-fail-on-empty-changeset
 
+      # Wait for stack completion
+      - name: Wait for CloudFormation deployment
+        run: |
+          aws cloudformation wait stack-create-complete \
+            --stack-name aws-clod || \
+          aws cloudformation wait stack-update-complete \
+            --stack-name aws-cloudformation-vpc
+
+      # Get stack outputs
       - name: Get stack outputs
         run: |
           aws cloudformation describe-stacks \
-            --stack-name nnnnnnnnnnnnn  \
+            --stack-name aws-clod \
             --query "Stacks[0].Outputs" \
             --output table
