@@ -500,21 +500,21 @@ Outputs:
   PrivateSecurityGroupID:
     Value: !Ref PrivateSecurityGroup
 
-  PublicEC2_1_IP:
+  PublicEC21IP:
     Description: Public EC2 1 Public IP
-    Value: !GetAtt PublicEC2_1.PublicIp
+    Value: !GetAtt PublicEC21.PublicIp
 
-  PublicEC2_2_IP:
+  PublicEC22IP:
     Description: Public EC2 2 Public IP
-    Value: !GetAtt PublicEC2_2.PublicIp
+    Value: !GetAtt PublicEC22.PublicIp
 
-  PrivateEC2_1_IP:
+  PrivateEC21IP:
     Description: Private EC2 1 Private IP
-    Value: !GetAtt PrivateEC2_1.PrivateIp
+    Value: !GetAtt PrivateEC21.PrivateIp
 
-  PrivateEC2_2_IP:
+  PrivateEC22IP:
     Description: Private EC2 2 Private IP
-    Value: !GetAtt PrivateEC2_2.PrivateIp
+    Value: !GetAtt PrivateEC22.PrivateIp
 
   NATPublicIP:
     Description: NAT Gateway Elastic IP
